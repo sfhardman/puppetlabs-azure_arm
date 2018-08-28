@@ -152,7 +152,6 @@ Puppet::Type.type(:azure_application).provide(:arm) do
     path_params = {}
     query_params = {}
     header_params = {}
-
     op_params = [
       self.op_param("api-version", "query", "api_version"),
       self.op_param("parameters", "body", "parameters"),
@@ -178,7 +177,7 @@ Puppet::Type.type(:azure_application).provide(:arm) do
 
   def self.invoke_update(resource = nil, body_params = nil)
     key_values = self.build_key_values
-    Puppet.info("Calling operation Applications_Create")
+    Puppet.info("Calling operation Applications_Update")
     path_params = {}
     query_params = {}
     header_params = {}
@@ -187,6 +186,7 @@ Puppet::Type.type(:azure_application).provide(:arm) do
       self.op_param("api-version", "query", "api_version"),
       self.op_param("parameters", "body", "parameters"),
       self.op_param("tenantID", "path", "tenant_id"),
+      self.op_param("applicationObjectId", "path", "object_id"),
     ]
     op_params.each do |i|
       inquery = i[:inquery]
@@ -203,7 +203,7 @@ Puppet::Type.type(:azure_application).provide(:arm) do
         path_params[name_snake.to_sym] = resource[paramalias.to_sym] unless resource.nil? || resource[paramalias.to_sym].nil?
       end
     end
-    self.call_op(path_params, query_params, header_params, body_params, "graph.windows.net", "/%{tenant_id}/applications", "Post", "[application/json text/json]")
+    self.call_op(path_params, query_params, header_params, body_params, "graph.windows.net", "/%{tenant_id}/applications/%{application_object_id}", "Patch", "[application/json text/json]")
   end
 
   def self.invoke_delete(resource = nil, body_params = nil)
@@ -215,7 +215,7 @@ Puppet::Type.type(:azure_application).provide(:arm) do
 
     op_params = [
       self.op_param("api-version", "query", "api_version"),
-      self.op_param("applicationObjectId", "path", "objectid"),
+      self.op_param("applicationObjectId", "path", "object_id"),
       self.op_param("tenantID", "path", "tenant_id"),
     ]
     op_params.each do |i|
@@ -275,7 +275,7 @@ Puppet::Type.type(:azure_application).provide(:arm) do
 
     op_params = [
       self.op_param("api-version", "query", "api_version"),
-      self.op_param("applicationObjectId", "path", "objectid"),
+      self.op_param("applicationObjectId", "path", "object_id"),
       self.op_param("tenantID", "path", "tenant_id"),
     ]
     op_params.each do |i|
@@ -316,7 +316,7 @@ Puppet::Type.type(:azure_application).provide(:arm) do
                                    "grant_type" => "client_credentials",
                                    "client_id" => @client_id,
                                    "client_secret" => @client_secret,
-                                   "resource" => "https://management.azure.com/")
+                                   "resource" => "https://graph.windows.net/")
 
     Puppet.debug("get oauth2 token response code is #{response.code} and body is #{response.body}")
     success = response.is_a? Net::HTTPSuccess
@@ -380,6 +380,10 @@ Puppet::Type.type(:azure_application).provide(:arm) do
           req = Net::HTTP::Put.new(uri)
         elsif operation_verb == "Delete"
           req = Net::HTTP::Delete.new(uri)
+        elsif operation_verb == "Post"
+          req = Net::HTTP::Post.new(uri)
+        elsif operation_verb == "Patch"
+          req = Net::HTTP::Patch.new(uri)
         end
         add_keys_to_request(req, header_params)
         if body_params

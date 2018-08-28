@@ -75,7 +75,7 @@ Puppet::Type.newtype(:azure_application) do
       true
     end
   end
-  newproperty(:reply_urls) do
+  newproperty(:reply_urls, :array_matching => :all) do
     desc "A collection of reply URLs for the application."
     validate do |value|
       true
